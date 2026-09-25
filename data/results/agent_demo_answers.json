@@ -1,0 +1,16 @@
+{
+  "llm_provider": "ollama",
+  "model": "qwen2.5:7b",
+  "answers": [
+    {
+      "question": "What is the summary of the paper 'Continuous Benchmark Evaluation for Enterprise Retrieval Pipelines'?",
+      "ground_truth": "Static benchmarks fail to capture domain drift in enterprise knowledge bases.",
+      "agent_answer": "The paper titled \"Continuous Benchmark Evaluation for Enterprise Retrieval Pipelines\" by Quang Le and Yen Vu discusses the limitations of static benchmarks in capturing domain drift in enterprise knowledge bases. They introduce a synthetic test generator that automatically creates paired evaluation sets whenever new corpora are ingested, providing a continuous benchmark evaluation method for enterprise retrieval pipelines."
+    },
+    {
+      "question": "Who authored the paper 'Synthetic Corruption Testing: Stress-Testing Vector Search Robustness'?",
+      "ground_truth": "Kien Duong, Vy Ly",
+      "agent_answer": "The paper 'Synthetic Corruption Testing: Stress-Testing Vector Search Robustness' was authored by Kien Duong and Vy Ly."
+    }
+  ]
+}

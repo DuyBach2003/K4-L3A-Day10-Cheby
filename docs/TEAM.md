@@ -1,8 +1,9 @@
 # Danh Sách Thành Viên & Báo Cáo Phân Công Nhóm
 
-- **Tên Nhóm:** `[Điền tên nhóm]`
+- **Tên Nhóm:** `Cheby`
 - **Mã Nhóm / Lớp:** `K4-L3-DAY10`
-- **Tên Repository Nộp Bài:** `K4-L3-DAY10-TenNhom-DataPipeline`
+- **Tên Repository Nộp Bài:** `K4-L3A-Day10-Cheby` (https://github.com/DuyBach2003/K4-L3A-Day10-Cheby)
+- **Quy mô nhóm:** 1 thành viên (làm cá nhân, đảm nhận toàn bộ 4 vai trò gợi ý)
 
 ---
 
@@ -10,49 +11,39 @@
 
 | STT | Họ và tên | MSSV | Email | Vai trò & Phân công công việc | Báo cáo cá nhân |
 |---:|---|---|---|---|---|
-| 1 | | | | Trưởng nhóm / Pipeline Integrator (`core/`, `phase1.py`, `corruption_flow.py`) | `report/<MSSV1>_HoTen.md` |
-| 2 | | | | Data Foundation & Recovery (`crossref.py`, `cleaning.py`, raw data) | `report/<MSSV2>_HoTen.md` |
-| 3 | | | | RAG & Vector Index (`retrieval/index.py`, `embeddings.py`, ChromaDB) | `report/<MSSV3>_HoTen.md` |
-| 4 | | | | Observability & Evaluation (`quality.py` GX 1.x, `testset.py`, reporting) | `report/<MSSV4>_HoTen.md` |
+| 1 | Đoàn Duy Bách | 2A202602515 | bachtipch@gmail.com | Toàn bộ 4 vai trò: Pipeline Integrator (`core/`, `pipelines/`), Data Foundation (`crossref.py`, `cleaning.py`, `corruption.py`), RAG & Vector Index (`retrieval/`), Observability & Evaluation (`quality.py`, `reporting.py`, `testset.py`) | `report/2A202602515_DoanDuyBach.md` |
 
-*(Nếu nhóm có 3 hoặc 5-6 thành viên, xem bảng phân công chi tiết theo vai trò trong file `CHECKPOINTS.md`)*.
+### Phân công theo Checkpoint
+
+| Checkpoint | Nội dung | Người thực hiện | Bằng chứng |
+|---|---|---|---|
+| CP0 | Môi trường, `.env`, ingestion raw data | Đoàn Duy Bách | `src/ingestion/crossref.py`, `data/raw/` |
+| CP1 | Cleaning, GX 1.x Quality Gate, Freshness SLA | Đoàn Duy Bách | `src/ingestion/cleaning.py`, `src/observability/quality.py`, `data/quality/baseline_quality_report.json` |
+| CP2 | Test set, ChromaDB index `papers-baseline` | Đoàn Duy Bách | `src/evaluation/testset.py`, `data/eval/test_set.json`, `data/chroma/` |
+| CP3 | Baseline end-to-end, báo cáo pha 1 | Đoàn Duy Bách | `src/pipelines/phase1.py`, `data/results/baseline_metrics.json`, `data/reports/phase1_report.md` |
+| CP4 | Tiêm 6 lỗi, đo suy giảm | Đoàn Duy Bách | `src/ingestion/corruption.py`, `data/results/corruption_log.json`, `data/results/corrupted_metrics.json` |
+| CP5 | Idempotent repair, báo cáo 3 trạng thái | Đoàn Duy Bách | `src/pipelines/corruption_flow.py`, `data/results/repaired_metrics.json`, `data/reports/corruption_report.md` |
+| CP6 | Demo, nộp bài | Đoàn Duy Bách | Repo trên GitHub, link nộp LMS |
 
 ---
 
 ## # Cá nhân
 
-### ## HoVaTen1-MSSV1
-- **Vai trò:** Trưởng nhóm & Điều phối Pipeline.
+### ## DoanDuyBach-2A202602515
+- **Vai trò:** Thành viên duy nhất, phụ trách toàn bộ pipeline từ ingestion đến báo cáo đối chiếu.
 - **Công việc chi tiết đã hoàn thành:**
-  - Thiết lập cấu hình hệ thống `core/config.py` và đường dẫn artifacts `core/utils.py`.
-  - Kết nối luồng thực thi trong `src/pipelines/phase1.py` và `src/pipelines/corruption_flow.py`.
-  - Kiểm tra tính nhất quán của các artifacts và theo dõi Contributor tracking trên GitHub nhánh `main`.
+  - `src/ingestion/crossref.py`: parse payload Crossref (bóc tag JATS, dedupe DOI, chuẩn hóa ngày), gọi API có retry cho 429/5xx và fallback về snapshot offline, lưu 2 raw artifacts.
+  - `src/ingestion/cleaning.py`: chuẩn hóa text, tính `age_days`, sinh `text_for_embedding` 5 phần, khử trùng lặp theo `paper_id`.
+  - `src/observability/quality.py`: Quality Gate GX 1.x (ephemeral context, `add_pandas`) với 4 expectation bắt buộc + 1 kiểm tra độ dài title; Freshness SLA 180 ngày / 25%.
+  - `src/evaluation/testset.py`: 10 câu hỏi tất định thuộc 4 loại `summary`, `authors`, `date`, `categories`.
+  - `src/ingestion/corruption.py`: 6 kịch bản lỗi có seed, ghi `corruption_log.json`.
+  - `src/pipelines/phase1.py`, `src/pipelines/corruption_flow.py`: điều phối, chặn index khi gate fail, tự động repair từ raw khi gate trip, kiểm tra idempotent bằng fingerprint.
+  - `src/observability/reporting.py`: báo cáo Markdown pha 1 và bảng đối chiếu 3 trạng thái.
+  - `src/retrieval/index.py`: sửa manifest để lưu đường dẫn Chroma tương đối (tránh hardcode đường dẫn tuyệt đối).
+  - `tests/test_pipeline.py`: 8 test pytest cho ingestion, cleaning, GX gate, corruption, test set.
+  - Cài Ollama + `qwen2.5:7b` chạy local để LLM judge và agent demo hoạt động không cần API key; siết prompt judge.
+- **Kết quả:** Baseline hit rate 1.0 / token F1 1.0 / judge accuracy 1.0 → Corrupted 0.8 / 0.6568 / 0.6 → Repaired 1.0 / 1.0 / 1.0.
 - **Điều học được / Đóng góp chính:**
-  - Hiểu sâu sắc về thiết kế Idempotent Pipeline và quản lý trạng thái luồng dữ liệu đa tầng.
-
-### ## HoVaTen2-MSSV2
-- **Vai trò:** Phụ trách Ingestion, Làm sạch & Phục hồi dữ liệu.
-- **Công việc chi tiết đã hoàn thành:**
-  - Xây dựng module thu thập Crossref API với cơ chế Fallback offline trong `src/ingestion/crossref.py`.
-  - Chuẩn hóa schema, tính toán trường `age_days` và `text_for_embedding` trong `src/ingestion/cleaning.py`.
-  - Thực thi cơ chế Idempotent Repair phục hồi dữ liệu từ raw snapshot.
-- **Điều học được / Đóng góp chính:**
-  - Kỹ thuật truy vết nguồn gốc dữ liệu (Data Lineage) và bảo toàn raw snapshot trước khi biến đổi.
-
-### ## HoVaTen3-MSSV3
-- **Vai trò:** Phụ trách RAG, Vector Database & Embedding.
-- **Công việc chi tiết đã hoàn thành:**
-  - Quản lý mô hình embedding `sentence-transformers/all-MiniLM-L6-v2`.
-  - Nạp và quản lý 3 collection riêng biệt trong ChromaDB (`papers-baseline`, `papers-corrupted`, `papers-repaired`).
-  - Xây dựng QA Agent truy vấn ngữ cảnh chính xác theo tài liệu.
-- **Điều học được / Đóng góp chính:**
-  - Cách cô lập các không gian vector để so sánh khách quan giữa dữ liệu sạch và dữ liệu bị lỗi.
-
-### ## HoVaTen4-MSSV4
-- **Vai trò:** Phụ trách Data Observability & Benchmark Evaluation.
-- **Công việc chi tiết đã hoàn thành:**
-  - Thiết lập Quality Gate theo chuẩn mới **Great Expectations 1.x** và giám sát Freshness SLA trong `src/observability/quality.py`.
-  - Xây dựng bộ câu hỏi đánh giá chuẩn trong `src/evaluation/testset.py`.
-  - Đo lường và xuất bảng đối chiếu 3 trạng thái vào `data/reports/corruption_report.md`.
-- **Điều học được / Đóng góp chính:**
-  - Cách thiết lập hệ thống cảnh báo sớm chặn đứng hiện tượng Silent Failure trước khi dữ liệu vào serving layer.
+  - Silent failure: agent vẫn trả lời đủ 10/10 câu trên dữ liệu hỏng, chỉ Quality Gate và Freshness SLA mới báo lỗi.
+  - Repair đúng nghĩa là rebuild từ raw bất biến bằng cùng code cleaning, không vá tay dữ liệu hỏng; fingerprint trùng baseline chứng minh tính idempotent.
+- **Công cụ hỗ trợ:** Có sử dụng Claude Code (AI assistant) để hỗ trợ viết code và báo cáo theo chính sách AI tại `docs/RULES.md` mục 3; mọi kết quả đã được chạy lại và kiểm chứng trên artifact thực tế.

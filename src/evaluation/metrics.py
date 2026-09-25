@@ -47,15 +47,26 @@ def _token_f1(reference: str, prediction: str) -> float:
 
 def _judge_answer(settings: Settings, question: str, reference: str, prediction: str) -> JudgeVerdict:
     prompt = f"""
-Evaluate the model answer against the reference answer.
+You are grading a QA system. The reference answer is the ground truth: treat it as fully correct and complete,
+and do NOT use outside knowledge or judge whether the reference itself is a good answer to the question.
+Only compare the facts stated in the model answer with the facts stated in the reference answer.
+Dates, numbers and names must match exactly: a date that differs in the year, month or day is WRONG (score 1),
+and a different list of authors or categories is WRONG (score 1).
 
 Question: {question}
 Reference answer: {reference}
 Model answer: {prediction}
 
+Scoring:
+- 5: same facts as the reference (wording may differ; an identical answer is always 5)
+- 4: same key facts with minor omissions or harmless extra text
+- 3: partially correct, some key facts missing or noisy
+- 2: mostly wrong, little overlap with the reference facts
+- 1: wrong, contradicts the reference (e.g. different date, authors or topic), empty, or garbage
+
 Return:
 - score from 1 to 5
-- correct = true only when the answer is materially correct
+- correct = true only when score >= 4 (the answer states the reference facts without contradiction)
 - short reasoning
 """.strip()
     try:
@@ -137,6 +148,21 @@ def evaluate_pipeline(
         "judge_accuracy": mean(1.0 if item["judge"]["correct"] else 0.0 for item in answers),
         "mean_judge_score": mean(item["judge"]["score"] for item in answers),
     }
+    summary["by_question_type"] = {
+        question_type: {
+            "samples": len(group),
+            "retrieval_hit_rate": mean(1.0 if item["retrieval_hit"] else 0.0 for item in group),
+            "mean_token_f1": mean(item["token_f1"] for item in group),
+            "judge_accuracy": mean(1.0 if item["judge"]["correct"] else 0.0 for item in group),
+        }
+        for question_type in sorted({item["question_type"] for item in answers})
+        for group in [[item for item in answers if item["question_type"] == question_type]]
+    }
+    summary["judge_mode"] = (
+        "heuristic_fallback"
+        if all(item["judge"]["reasoning"].startswith("Fallback heuristic") for item in answers)
+        else "llm"
+    )
     summary["ragas"] = _run_ragas(settings, answers)
 
     bundle = EvaluationBundle(summary=summary, answers=answers)
